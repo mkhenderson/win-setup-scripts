@@ -62,10 +62,10 @@ $catalog = @(
 
     [pscustomobject]@{ Group='Office and productivity'; Match='Microsoft.MicrosoftOfficeHub';   Label='Office / Microsoft 365 hub';  Recommended=$true }
     [pscustomobject]@{ Group='Office and productivity'; Match='Microsoft.Office.Sway';          Label='Sway';                        Recommended=$true }
-    [pscustomobject]@{ Group='Office and productivity'; Match='Microsoft.MicrosoftJournal';     Label='Journal';                     Recommended=$true }
     [pscustomobject]@{ Group='Office and productivity'; Match='Microsoft.MicrosoftPowerBIForWindows'; Label='Power BI';              Recommended=$true }
     [pscustomobject]@{ Group='Office and productivity'; Match='Microsoft.PowerAutomateDesktop';  Label='Power Automate';             Recommended=$true }
     [pscustomobject]@{ Group='Office and productivity'; Match='Clipchamp.Clipchamp';            Label='Clipchamp video editor';      Recommended=$true }
+    [pscustomobject]@{ Group='Office and productivity'; Match='Microsoft.MicrosoftJournal';     Label='Journal (holds notebooks)';   Recommended=$false }
     [pscustomobject]@{ Group='Office and productivity'; Match='Microsoft.Office.OneNote';       Label='OneNote (store version, may hold notes)'; Recommended=$false }
     [pscustomobject]@{ Group='Office and productivity'; Match='Microsoft.MicrosoftStickyNotes'; Label='Sticky Notes (holds your notes)';         Recommended=$false }
     [pscustomobject]@{ Group='Office and productivity'; Match='Microsoft.Todos';                Label='Microsoft To Do';             Recommended=$false }
@@ -137,41 +137,91 @@ $catalog = @(
     [pscustomobject]@{ Group='OEM (Lenovo)'; Match='LenovoCompanyLimited.LenovoVantageService'; Label='Lenovo Vantage Service';  Recommended=$false }
 )
 
-# Only keep the ones actually installed so we don't show dead entries.
+# Match on the exact package name. Detection and removal use the same names, so
+# what the list offers is what actually gets removed. Packages that aren't
+# installed on this machine are dropped, which also handles Windows 10 vs 11 and
+# build-to-build differences without a compatibility layer.
 $installed = Get-AppxPackage -AllUsers | Select-Object -ExpandProperty Name -Unique
-$present = $catalog | Where-Object {
-    $m = $_.Match
-    @($installed | Where-Object { $_ -eq $m -or $_ -like "$m*" }).Count -gt 0
+$present = $catalog | Where-Object { $installed -contains $_.Match }
+
+# Try to create a real restore point and confirm it actually appeared. Returns
+# $true only if a new point was created. Windows normally skips a restore point
+# if one was made in the last 24 hours, so we lift that limit just for our call
+# and put the original setting back afterwards.
+function New-RestorePoint {
+    param([scriptblock]$Say)
+    & $Say "Creating restore point..."
+    try {
+        Enable-ComputerRestore -Drive "$env:SystemDrive\" -ErrorAction Stop
+    } catch {
+        & $Say "System Protection could not be enabled: $($_.Exception.Message)"
+        return $false
+    }
+
+    $before = (Get-ComputerRestorePoint -ErrorAction SilentlyContinue | Select-Object -Last 1).SequenceNumber
+
+    $key = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\SystemRestore"
+    $prevFreq = $null
+    try { $prevFreq = (Get-ItemProperty -Path $key -Name SystemRestorePointCreationFrequency -ErrorAction Stop).SystemRestorePointCreationFrequency } catch { }
+
+    try {
+        New-ItemProperty -Path $key -Name SystemRestorePointCreationFrequency -Value 0 -PropertyType DWord -Force | Out-Null
+        Checkpoint-Computer -Description "Before Windows Cleanup" -RestorePointType "MODIFY_SETTINGS" -ErrorAction Stop
+    } catch {
+        & $Say "Restore point request failed: $($_.Exception.Message)"
+    } finally {
+        if ($null -ne $prevFreq) {
+            Set-ItemProperty -Path $key -Name SystemRestorePointCreationFrequency -Value $prevFreq -ErrorAction SilentlyContinue
+        } else {
+            Remove-ItemProperty -Path $key -Name SystemRestorePointCreationFrequency -ErrorAction SilentlyContinue
+        }
+    }
+
+    $after = (Get-ComputerRestorePoint -ErrorAction SilentlyContinue | Select-Object -Last 1).SequenceNumber
+    if ($after -and $after -ne $before) {
+        & $Say "Restore point created."
+        return $true
+    }
+    & $Say "No restore point was created."
+    return $false
 }
 
+# Remove the named packages for all users and deprovision them so new accounts
+# don't get them back. Confirms each one afterwards and returns a tally.
 function Remove-Chosen {
     param(
         [string[]]$Names,
-        [bool]$MakeRestorePoint,
         [scriptblock]$Say
     )
-    if ($MakeRestorePoint) {
-        & $Say "Creating restore point..."
-        try {
-            Enable-ComputerRestore -Drive "$env:SystemDrive\" -ErrorAction SilentlyContinue
-            Checkpoint-Computer -Description "Before Windows Cleanup" -RestorePointType "MODIFY_SETTINGS" -ErrorAction Stop
-            & $Say "Restore point created."
-        } catch {
-            & $Say "Could not create a restore point (System Protection may be off). Continuing."
-        }
-    }
+    $removed = 0; $failed = 0; $absent = 0
     foreach ($n in $Names) {
+        if (-not (Get-AppxPackage -AllUsers -Name $n -ErrorAction SilentlyContinue)) {
+            & $Say "$n is not installed, skipping."
+            $absent++
+            continue
+        }
         & $Say "Removing $n..."
         try {
-            Get-AppxPackage -AllUsers -Name $n -ErrorAction SilentlyContinue | Remove-AppxPackage -AllUsers -ErrorAction SilentlyContinue
-            Get-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue |
-                Where-Object { $_.DisplayName -eq $n } |
-                Remove-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue | Out-Null
+            Get-AppxPackage -AllUsers -Name $n -ErrorAction Stop | Remove-AppxPackage -AllUsers -ErrorAction Stop
         } catch {
-            & $Say "  failed: $($_.Exception.Message)"
+            & $Say "  could not remove for installed users: $($_.Exception.Message)"
+        }
+        Get-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue |
+            Where-Object { $_.DisplayName -eq $n } |
+            ForEach-Object {
+                try { Remove-AppxProvisionedPackage -Online -PackageName $_.PackageName -ErrorAction Stop | Out-Null }
+                catch { & $Say "  could not deprovision: $($_.Exception.Message)" }
+            }
+        if (Get-AppxPackage -AllUsers -Name $n -ErrorAction SilentlyContinue) {
+            & $Say "  still present (may be protected or in use)."
+            $failed++
+        } else {
+            & $Say "  removed."
+            $removed++
         }
     }
-    & $Say "Done."
+    & $Say "Finished. Removed $removed, failed $failed, not installed $absent."
+    return [pscustomobject]@{ Removed = $removed; Failed = $failed; Absent = $absent }
 }
 
 # ---------------------------------------------------------------------------
@@ -180,8 +230,16 @@ function Remove-Chosen {
 if ($Recommended) {
     $names = @($present | Where-Object Recommended | Select-Object -ExpandProperty Match)
     if (-not $names) { Write-Host "Nothing to remove."; return }
+    $say = { param($t) Write-Host $t }
+    if (-not $SkipRestorePoint) {
+        if (-not (New-RestorePoint -Say $say)) {
+            Write-Host "Aborting: a restore point was requested but could not be created."
+            Write-Host "Re-run with -SkipRestorePoint to proceed without one."
+            return
+        }
+    }
     Write-Host "Removing recommended apps: $($names.Count)"
-    Remove-Chosen -Names $names -MakeRestorePoint (-not $SkipRestorePoint) -Say { param($t) Write-Host $t }
+    Remove-Chosen -Names $names -Say $say | Out-Null
     return
 }
 
@@ -237,11 +295,19 @@ if ($NoGui) {
     $picked | ForEach-Object { Write-Host "  $($_.Label)" }
     if ((Read-Host "Proceed? (y/n)") -notmatch '^\s*[Yy]') { Write-Host "Cancelled."; return }
 
-    $doRestore = $true
-    if ($SkipRestorePoint) { $doRestore = $false }
-    elseif ((Read-Host "Create a restore point first? (y/n)") -match '^\s*[Nn]') { $doRestore = $false }
+    $say = { param($t) Write-Host $t }
+    $wantRestore = $true
+    if ($SkipRestorePoint) { $wantRestore = $false }
+    elseif ((Read-Host "Create a restore point first? (y/n)") -match '^\s*[Nn]') { $wantRestore = $false }
 
-    Remove-Chosen -Names @($picked.Match) -MakeRestorePoint $doRestore -Say { param($t) Write-Host $t }
+    if ($wantRestore -and -not (New-RestorePoint -Say $say)) {
+        if ((Read-Host "Restore point was not created. Continue without one? (y/n)") -notmatch '^\s*[Yy]') {
+            Write-Host "Cancelled."
+            return
+        }
+    }
+
+    Remove-Chosen -Names @($picked.Match) -Say $say | Out-Null
     Write-Host ""
     Read-Host "Press Enter to close" | Out-Null
     return
@@ -260,7 +326,7 @@ $form.StartPosition = "CenterScreen"
 $form.MinimumSize = New-Object Drawing.Size(520, 560)
 
 $intro = New-Object Windows.Forms.Label
-$intro.Text = "Tick the apps you want gone, then click Apply. Only ticked items are removed."
+$intro.Text = "Ticked items are recommended. Unticked are optional, review before removing. Only ticked items get removed."
 $intro.Location = New-Object Drawing.Point(12, 10)
 $intro.Size = New-Object Drawing.Size(560, 20)
 $form.Controls.Add($intro)
@@ -370,10 +436,24 @@ $btnApply.Add_Click({
     if ($answer -ne "Yes") { return }
 
     $btnApply.Enabled = $false
-    Remove-Chosen -Names @($chosen.Tag) -MakeRestorePoint $restoreCheck.Checked -Say $sayGui
-    foreach ($cb in $chosen) { $cb.Enabled = $false }
+    if ($restoreCheck.Checked -and -not (New-RestorePoint -Say $sayGui)) {
+        $cont = [Windows.Forms.MessageBox]::Show(
+            "A restore point could not be created. Continue without one?",
+            "Confirm", "YesNo", "Warning")
+        if ($cont -ne "Yes") { $btnApply.Enabled = $true; return }
+    }
+
+    $result = Remove-Chosen -Names @($chosen.Tag) -Say $sayGui
+    foreach ($cb in $chosen) {
+        if (-not (Get-AppxPackage -AllUsers -Name $cb.Tag -ErrorAction SilentlyContinue)) {
+            $cb.Checked = $false
+            $cb.Enabled = $false
+        }
+    }
     $btnApply.Enabled = $true
-    [Windows.Forms.MessageBox]::Show("Finished. A sign-out or restart helps some changes settle.", "Windows Cleanup") | Out-Null
+    [Windows.Forms.MessageBox]::Show(
+        "Removed $($result.Removed), failed $($result.Failed). A sign-out or restart helps some changes settle.",
+        "Windows Cleanup") | Out-Null
 })
 
 if (-not $present) { & $sayGui "None of the known removable apps are installed on this PC." }

@@ -4,31 +4,50 @@ Small PowerShell tools I use when setting up a fresh Windows box.
 
 ## Debloat.ps1
 
-A little GUI for removing the built-in apps most people don't use (News,
-Weather, the Office hub, Solitaire, Teams personal, Cortana and so on).
+Removes preinstalled Windows, OEM and promotional apps you don't want. It has a
+GUI and a console mode, and only ever removes what you select. It is an app
+remover, not a system optimizer: it does not touch Windows Update, Defender,
+services, the registry (beyond one restore-point setting it reverts), scheduled
+tasks, telemetry or power settings.
 
-- Nothing happens until you tick boxes and click **Apply**.
-- Only the apps you tick are removed.
-- Essentials are never listed, so you can't nuke them by mistake: the Store,
-  Windows Terminal, Calculator, Photos, Snipping Tool, Windows Security and
-  the .NET / Visual C++ runtimes.
-- It can drop a system restore point before it starts.
+### What it does
 
-### What's ticked by default
+- Lists the removable apps that are actually installed on this machine.
+- Removes the ones you pick, for all user accounts, and deprovisions them so
+  new accounts created later don't get them back.
+- Can create a System Restore point first.
+- Reports how many were removed, failed, or weren't installed.
 
-The list covers Microsoft apps, the Bing suite, preinstalled third-party junk
-(Candy Crush, Spotify, TikTok and friends) and common HP / Dell / Lenovo extras.
-Defaults follow the same lines the debloat community draws:
+### What it does not do
 
-- **On by default:** clearly unused promo and info apps.
-- **Off by default:** anything that holds your data (Sticky Notes, Mail,
-  OneNote), things plenty of people use (Xbox, Phone Link, Media Player), and a
-  few that are touchy to remove (Get Help, Bing web search) or that manage your
-  hardware (Lenovo Vantage, Dell SupportAssist, HP Support Assistant).
+- It does not touch your files: documents, pictures, downloads, OneDrive
+  contents, browser data or saved games are not deleted.
+- It never lists core components, so they can't be removed by accident: the
+  Microsoft Store, Windows Terminal, Calculator, Photos, Snipping Tool, Windows
+  Security, Camera, Notepad, Paint, the Xbox identity/framework packages games
+  depend on, and the .NET / Visual C++ runtimes.
+- It makes no performance claims. Removing apps frees some disk space and cuts a
+  few background/startup entries. Whether you notice a speed difference depends
+  on the machine, so the tool doesn't promise one.
 
-Only apps actually installed on the machine show up, so the list is short on
-most PCs. The default tiers were cross-checked against the Raphire/Win11Debloat
-and ChrisTitusTech/winutil app lists.
+### The three categories
+
+- **Recommended (ticked by default).** Broadly unwanted promo and info apps: the
+  Bing suite, the Office/Get-Office hub, 3D apps, Solitaire, personal Teams,
+  Skype, Cortana, and preinstalled third-party and OEM promo apps (Candy Crush,
+  Spotify, Netflix, TikTok, HP JumpStarts, Dell Digital Delivery and similar).
+- **Optional (unticked by default).** Things plenty of people use, or that carry
+  a consequence, so you opt in per item: Xbox apps, Phone Link, Media Player,
+  Movies & TV, Copilot, and OEM utilities that manage drivers or firmware
+  (Lenovo Vantage, Dell SupportAssist, HP Support Assistant). Also here: apps
+  that hold your own data, since removing them can lose it. Sticky Notes,
+  OneNote, Journal, and Mail & Calendar are in this group for that reason.
+- **Protected (never listed).** The core components above are not in the tool at
+  all, so no mode can select them.
+
+`-Recommended` mode removes only the Recommended set. It will never remove an
+optional or protected item. If you want an optional app gone, tick it yourself
+in the GUI or select it in the console menu.
 
 ### Running it
 
@@ -51,9 +70,28 @@ powershell -ExecutionPolicy Bypass -File .\Debloat.ps1 -NoGui
 powershell -ExecutionPolicy Bypass -File .\Debloat.ps1 -Recommended
 ```
 
-Add `-SkipRestorePoint` to skip the restore point. It needs admin rights and
-will prompt for them.
+Add `-SkipRestorePoint` to skip the restore point. The script needs admin rights
+and will prompt for them. A sign-out or restart helps some changes settle.
 
-Removal applies to all user accounts on the machine and also deprovisions the
-apps so new accounts don't get them back. A sign-out or restart helps the
-changes settle.
+### Review before you remove
+
+Read the list before applying. Optional items are unticked on purpose. If you're
+not sure what something is, leave it. Windows 10 and Windows 11 ship different
+apps, and Microsoft renames packages between builds, so the list you see will
+differ from machine to machine. The tool only shows apps that are present and
+skips anything that isn't, rather than failing.
+
+### About the restore point
+
+If you ask for a restore point, the script creates one and confirms it was
+actually written before removing anything. (Windows normally skips a restore
+point if one was made in the last 24 hours; the script lifts that limit for its
+own call and puts the setting back.) In unattended `-Recommended` mode, if the
+restore point can't be created it stops instead of removing apps without a
+safety net. In the GUI and console it warns you and asks whether to continue.
+
+A restore point is a recovery option, not a guarantee. Removing a Store app is
+not always cleanly reversible. Some apps can be reinstalled from the Microsoft
+Store afterwards, some are gone until the next feature update reprovisions them,
+and a restore point rolls back system state but is not proof that every removal
+can be perfectly undone. If an app matters to you, don't remove it.
