@@ -36,43 +36,105 @@ if (-not $me.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
 # Terminal, Calculator, Photos, Snipping Tool, Windows Security, the .NET and
 # VC runtimes) is deliberately left out so it can't be removed by accident.
 #
-# Recommended = removed by default. The optional ones (Xbox, Phone Link, Media
-# Player) are off by default because plenty of people actually use them.
+# Recommended = removed by default. Tiers mirror what the community treats as
+# safe vs risky (Raphire/Win11Debloat and ChrisTitusTech/winutil):
+#   - clearly unused promo and info apps are on by default
+#   - apps that hold your data (Sticky Notes, Mail, OneNote) are off by default
+#   - things people often use (Xbox, Phone Link, Media Player) are off by default
+#   - Get Help and Bing Search are off because removal can error or affect Start
+#     menu search, and OEM utilities (Lenovo Vantage, Dell SupportAssist) can
+#     manage drivers/firmware, so those are off too
 $catalog = @(
-    [pscustomobject]@{ Group='News and info'; Match='Microsoft.BingNews';                    Label='Microsoft News';              Recommended=$true }
-    [pscustomobject]@{ Group='News and info'; Match='Microsoft.BingWeather';                 Label='Weather';                     Recommended=$true }
-    [pscustomobject]@{ Group='News and info'; Match='Microsoft.BingSearch';                  Label='Bing web search';             Recommended=$true }
+    [pscustomobject]@{ Group='Bing and news'; Match='Microsoft.BingNews';                    Label='Microsoft News';              Recommended=$true }
+    [pscustomobject]@{ Group='Bing and news'; Match='Microsoft.News';                        Label='News';                        Recommended=$true }
+    [pscustomobject]@{ Group='Bing and news'; Match='Microsoft.BingWeather';                 Label='Weather';                     Recommended=$true }
+    [pscustomobject]@{ Group='Bing and news'; Match='Microsoft.BingFinance';                 Label='Finance / Money';             Recommended=$true }
+    [pscustomobject]@{ Group='Bing and news'; Match='Microsoft.BingSports';                  Label='Sports';                      Recommended=$true }
+    [pscustomobject]@{ Group='Bing and news'; Match='Microsoft.BingTravel';                  Label='Travel';                      Recommended=$true }
+    [pscustomobject]@{ Group='Bing and news'; Match='Microsoft.BingHealthAndFitness';        Label='Health and Fitness';          Recommended=$true }
+    [pscustomobject]@{ Group='Bing and news'; Match='Microsoft.BingFoodAndDrink';            Label='Food and Drink';              Recommended=$true }
+    [pscustomobject]@{ Group='Bing and news'; Match='Microsoft.BingSearch';                  Label='Bing web search (can affect Start search)'; Recommended=$false }
 
-    [pscustomobject]@{ Group='Help and tips'; Match='Microsoft.GetHelp';                     Label='Get Help';                    Recommended=$true }
-    [pscustomobject]@{ Group='Help and tips'; Match='Microsoft.Getstarted';                  Label='Tips';                        Recommended=$true }
-    [pscustomobject]@{ Group='Help and tips'; Match='Microsoft.WindowsFeedbackHub';          Label='Feedback Hub';                Recommended=$true }
+    [pscustomobject]@{ Group='3D and VR';     Match='Microsoft.3DBuilder';                   Label='3D Builder';                  Recommended=$true }
+    [pscustomobject]@{ Group='3D and VR';     Match='Microsoft.Microsoft3DViewer';           Label='3D Viewer';                   Recommended=$true }
+    [pscustomobject]@{ Group='3D and VR';     Match='Microsoft.Print3D';                     Label='Print 3D';                    Recommended=$true }
+    [pscustomobject]@{ Group='3D and VR';     Match='Microsoft.MixedReality.Portal';         Label='Mixed Reality Portal';        Recommended=$true }
 
-    [pscustomobject]@{ Group='Office and web'; Match='Microsoft.MicrosoftOfficeHub';         Label='Office / Microsoft 365 hub';  Recommended=$true }
-    [pscustomobject]@{ Group='Office and web'; Match='Microsoft.Office.OneNote';             Label='OneNote (store version)';     Recommended=$false }
-    [pscustomobject]@{ Group='Office and web'; Match='Microsoft.PowerAutomateDesktop';       Label='Power Automate';              Recommended=$true }
-    [pscustomobject]@{ Group='Office and web'; Match='Clipchamp.Clipchamp';                  Label='Clipchamp video editor';      Recommended=$true }
+    [pscustomobject]@{ Group='Office and productivity'; Match='Microsoft.MicrosoftOfficeHub';   Label='Office / Microsoft 365 hub';  Recommended=$true }
+    [pscustomobject]@{ Group='Office and productivity'; Match='Microsoft.Office.Sway';          Label='Sway';                        Recommended=$true }
+    [pscustomobject]@{ Group='Office and productivity'; Match='Microsoft.MicrosoftJournal';     Label='Journal';                     Recommended=$true }
+    [pscustomobject]@{ Group='Office and productivity'; Match='Microsoft.MicrosoftPowerBIForWindows'; Label='Power BI';              Recommended=$true }
+    [pscustomobject]@{ Group='Office and productivity'; Match='Microsoft.PowerAutomateDesktop';  Label='Power Automate';             Recommended=$true }
+    [pscustomobject]@{ Group='Office and productivity'; Match='Clipchamp.Clipchamp';            Label='Clipchamp video editor';      Recommended=$true }
+    [pscustomobject]@{ Group='Office and productivity'; Match='Microsoft.Office.OneNote';       Label='OneNote (store version, may hold notes)'; Recommended=$false }
+    [pscustomobject]@{ Group='Office and productivity'; Match='Microsoft.MicrosoftStickyNotes'; Label='Sticky Notes (holds your notes)';         Recommended=$false }
+    [pscustomobject]@{ Group='Office and productivity'; Match='Microsoft.Todos';                Label='Microsoft To Do';             Recommended=$false }
+
+    [pscustomobject]@{ Group='Help and system'; Match='Microsoft.Getstarted';                Label='Tips';                        Recommended=$true }
+    [pscustomobject]@{ Group='Help and system'; Match='Microsoft.WindowsFeedbackHub';        Label='Feedback Hub';                Recommended=$true }
+    [pscustomobject]@{ Group='Help and system'; Match='Microsoft.NetworkSpeedTest';          Label='Network Speed Test';          Recommended=$true }
+    [pscustomobject]@{ Group='Help and system'; Match='Microsoft.OneConnect';                Label='Mobile Plans / Paid Wi-Fi';   Recommended=$true }
+    [pscustomobject]@{ Group='Help and system'; Match='Microsoft.Messaging';                 Label='Messaging';                   Recommended=$true }
+    [pscustomobject]@{ Group='Help and system'; Match='Microsoft.GetHelp';                   Label='Get Help (removal can error)';Recommended=$false }
+    [pscustomobject]@{ Group='Help and system'; Match='MicrosoftCorporationII.QuickAssist';  Label='Quick Assist (remote help)';  Recommended=$false }
+    [pscustomobject]@{ Group='Help and system'; Match='MicrosoftCorporationII.MicrosoftFamily'; Label='Family Safety';            Recommended=$false }
 
     [pscustomobject]@{ Group='Communication'; Match='Microsoft.People';                      Label='People';                      Recommended=$true }
-    [pscustomobject]@{ Group='Communication'; Match='Microsoft.Todos';                       Label='Microsoft To Do';             Recommended=$false }
     [pscustomobject]@{ Group='Communication'; Match='MicrosoftTeams';                        Label='Teams (personal)';            Recommended=$true }
     [pscustomobject]@{ Group='Communication'; Match='MSTeams';                               Label='Teams (personal, new)';       Recommended=$true }
     [pscustomobject]@{ Group='Communication'; Match='Microsoft.SkypeApp';                    Label='Skype';                       Recommended=$true }
     [pscustomobject]@{ Group='Communication'; Match='Microsoft.YourPhone';                   Label='Phone Link';                  Recommended=$false }
+    [pscustomobject]@{ Group='Communication'; Match='Microsoft.windowscommunicationsapps';   Label='Mail and Calendar (holds accounts)'; Recommended=$false }
 
     [pscustomobject]@{ Group='Media';  Match='Microsoft.ZuneMusic';                          Label='Media Player (Groove)';       Recommended=$false }
     [pscustomobject]@{ Group='Media';  Match='Microsoft.ZuneVideo';                          Label='Movies and TV';               Recommended=$false }
+    [pscustomobject]@{ Group='Media';  Match='Microsoft.WindowsSoundRecorder';               Label='Sound Recorder';              Recommended=$false }
 
-    [pscustomobject]@{ Group='Maps and misc'; Match='Microsoft.WindowsMaps';                 Label='Maps';                        Recommended=$true }
-    [pscustomobject]@{ Group='Maps and misc'; Match='Microsoft.WindowsAlarms';               Label='Clock / Alarms';              Recommended=$false }
-    [pscustomobject]@{ Group='Maps and misc'; Match='Microsoft.MicrosoftSolitaireCollection';Label='Solitaire Collection';        Recommended=$true }
-    [pscustomobject]@{ Group='Maps and misc'; Match='Microsoft.MixedReality.Portal';         Label='Mixed Reality Portal';        Recommended=$true }
-    [pscustomobject]@{ Group='Maps and misc'; Match='Microsoft.549981C3F5F10';               Label='Cortana';                     Recommended=$true }
+    [pscustomobject]@{ Group='Maps and games'; Match='Microsoft.WindowsMaps';                Label='Maps';                        Recommended=$true }
+    [pscustomobject]@{ Group='Maps and games'; Match='Microsoft.MicrosoftSolitaireCollection';Label='Solitaire Collection';       Recommended=$true }
+    [pscustomobject]@{ Group='Maps and games'; Match='Microsoft.549981C3F5F10';              Label='Cortana';                     Recommended=$true }
+    [pscustomobject]@{ Group='Maps and games'; Match='Microsoft.WindowsAlarms';              Label='Clock / Alarms';              Recommended=$false }
+
+    [pscustomobject]@{ Group='AI features'; Match='Microsoft.Copilot';                       Label='Copilot';                     Recommended=$false }
+    [pscustomobject]@{ Group='AI features'; Match='Microsoft.Windows.AIHub';                 Label='AI Hub';                      Recommended=$false }
 
     [pscustomobject]@{ Group='Xbox and gaming'; Match='Microsoft.GamingApp';                 Label='Xbox app';                    Recommended=$false }
+    [pscustomobject]@{ Group='Xbox and gaming'; Match='Microsoft.XboxApp';                   Label='Xbox Console Companion (old)';Recommended=$false }
     [pscustomobject]@{ Group='Xbox and gaming'; Match='Microsoft.XboxGamingOverlay';         Label='Xbox Game Bar';               Recommended=$false }
     [pscustomobject]@{ Group='Xbox and gaming'; Match='Microsoft.XboxGameOverlay';           Label='Xbox Game overlay';           Recommended=$false }
     [pscustomobject]@{ Group='Xbox and gaming'; Match='Microsoft.XboxSpeechToTextOverlay';   Label='Xbox speech-to-text overlay'; Recommended=$false }
     [pscustomobject]@{ Group='Xbox and gaming'; Match='Microsoft.Xbox.TCUI';                 Label='Xbox live UI';                Recommended=$false }
+
+    [pscustomobject]@{ Group='Preinstalled third-party'; Match='king.com.CandyCrushSaga';        Label='Candy Crush Saga';        Recommended=$true }
+    [pscustomobject]@{ Group='Preinstalled third-party'; Match='king.com.CandyCrushSodaSaga';    Label='Candy Crush Soda Saga';   Recommended=$true }
+    [pscustomobject]@{ Group='Preinstalled third-party'; Match='king.com.BubbleWitch3Saga';      Label='Bubble Witch 3 Saga';     Recommended=$true }
+    [pscustomobject]@{ Group='Preinstalled third-party'; Match='SpotifyAB.SpotifyMusic';         Label='Spotify (promo)';         Recommended=$true }
+    [pscustomobject]@{ Group='Preinstalled third-party'; Match='Disney.37853FC22B2CE';           Label='Disney+';                 Recommended=$true }
+    [pscustomobject]@{ Group='Preinstalled third-party'; Match='4DF9E0F8.Netflix';               Label='Netflix';                 Recommended=$true }
+    [pscustomobject]@{ Group='Preinstalled third-party'; Match='AmazonVideo.PrimeVideo';         Label='Prime Video';             Recommended=$true }
+    [pscustomobject]@{ Group='Preinstalled third-party'; Match='Amazon.com.Amazon';              Label='Amazon';                  Recommended=$true }
+    [pscustomobject]@{ Group='Preinstalled third-party'; Match='BytedancePte.Ltd.TikTok';        Label='TikTok';                  Recommended=$true }
+    [pscustomobject]@{ Group='Preinstalled third-party'; Match='FACEBOOK.FACEBOOK';              Label='Facebook';                Recommended=$true }
+    [pscustomobject]@{ Group='Preinstalled third-party'; Match='Facebook.Instagram';             Label='Instagram';               Recommended=$true }
+    [pscustomobject]@{ Group='Preinstalled third-party'; Match='LinkedInforWindows';             Label='LinkedIn';                Recommended=$true }
+    [pscustomobject]@{ Group='Preinstalled third-party'; Match='Duolingo-LearnLanguagesforFree'; Label='Duolingo';                Recommended=$true }
+    [pscustomobject]@{ Group='Preinstalled third-party'; Match='Flipboard';                      Label='Flipboard';               Recommended=$true }
+    [pscustomobject]@{ Group='Preinstalled third-party'; Match='WinZipUniversal';                Label='WinZip';                  Recommended=$true }
+
+    [pscustomobject]@{ Group='OEM (HP)'; Match='AD2F1837.HPJumpStarts';                      Label='HP JumpStarts';               Recommended=$true }
+    [pscustomobject]@{ Group='OEM (HP)'; Match='AD2F1837.HPWelcome';                         Label='HP Welcome';                  Recommended=$true }
+    [pscustomobject]@{ Group='OEM (HP)'; Match='AD2F1837.myHP';                              Label='myHP';                        Recommended=$true }
+    [pscustomobject]@{ Group='OEM (HP)'; Match='AD2F1837.HPConnectedMusic';                  Label='HP Connected Music';          Recommended=$true }
+    [pscustomobject]@{ Group='OEM (HP)'; Match='AD2F1837.HPConnectedPhotopoweredbySnapfish'; Label='HP Connected Photo';          Recommended=$true }
+    [pscustomobject]@{ Group='OEM (HP)'; Match='AD2F1837.HPRegistration';                    Label='HP Registration';             Recommended=$true }
+    [pscustomobject]@{ Group='OEM (HP)'; Match='AD2F1837.HPSupportAssistant';               Label='HP Support Assistant (updates drivers)'; Recommended=$false }
+
+    [pscustomobject]@{ Group='OEM (Dell)'; Match='DellInc.DellDigitalDelivery';             Label='Dell Digital Delivery';       Recommended=$true }
+    [pscustomobject]@{ Group='OEM (Dell)'; Match='DellInc.DellMobileConnect';               Label='Dell Mobile Connect';         Recommended=$true }
+    [pscustomobject]@{ Group='OEM (Dell)'; Match='DellInc.DellSupportAssistforPCs';         Label='Dell SupportAssist (updates drivers)'; Recommended=$false }
+
+    [pscustomobject]@{ Group='OEM (Lenovo)'; Match='E046963F.LenovoCompanion';              Label='Lenovo Vantage (manages firmware/battery)'; Recommended=$false }
+    [pscustomobject]@{ Group='OEM (Lenovo)'; Match='LenovoCompanyLimited.LenovoVantageService'; Label='Lenovo Vantage Service';  Recommended=$false }
 )
 
 # Only keep the ones actually installed so we don't show dead entries.
