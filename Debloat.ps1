@@ -63,8 +63,8 @@ $catalog = @(
     [pscustomobject]@{ Group='Office and productivity'; Match='Microsoft.MicrosoftOfficeHub';   Label='Office / Microsoft 365 hub';  Recommended=$true }
     [pscustomobject]@{ Group='Office and productivity'; Match='Microsoft.Office.Sway';          Label='Sway';                        Recommended=$true }
     [pscustomobject]@{ Group='Office and productivity'; Match='Microsoft.MicrosoftPowerBIForWindows'; Label='Power BI';              Recommended=$true }
-    [pscustomobject]@{ Group='Office and productivity'; Match='Microsoft.PowerAutomateDesktop';  Label='Power Automate';             Recommended=$true }
-    [pscustomobject]@{ Group='Office and productivity'; Match='Clipchamp.Clipchamp';            Label='Clipchamp video editor';      Recommended=$true }
+    [pscustomobject]@{ Group='Office and productivity'; Match='Microsoft.PowerAutomateDesktop';  Label='Power Automate (may hold local flows)'; Recommended=$false }
+    [pscustomobject]@{ Group='Office and productivity'; Match='Clipchamp.Clipchamp';            Label='Clipchamp video editor (may hold projects)'; Recommended=$false }
     [pscustomobject]@{ Group='Office and productivity'; Match='Microsoft.MicrosoftJournal';     Label='Journal (holds notebooks)';   Recommended=$false }
     [pscustomobject]@{ Group='Office and productivity'; Match='Microsoft.Office.OneNote';       Label='OneNote (store version, may hold notes)'; Recommended=$false }
     [pscustomobject]@{ Group='Office and productivity'; Match='Microsoft.MicrosoftStickyNotes'; Label='Sticky Notes (holds your notes)';         Recommended=$false }
@@ -81,7 +81,7 @@ $catalog = @(
 
     [pscustomobject]@{ Group='Communication'; Match='Microsoft.People';                      Label='People';                      Recommended=$true }
     [pscustomobject]@{ Group='Communication'; Match='MicrosoftTeams';                        Label='Teams (personal)';            Recommended=$true }
-    [pscustomobject]@{ Group='Communication'; Match='MSTeams';                               Label='Teams (personal, new)';       Recommended=$true }
+    [pscustomobject]@{ Group='Communication'; Match='MSTeams';                               Label='Teams (new unified app, may be your work client)'; Recommended=$false }
     [pscustomobject]@{ Group='Communication'; Match='Microsoft.SkypeApp';                    Label='Skype';                       Recommended=$true }
     [pscustomobject]@{ Group='Communication'; Match='Microsoft.YourPhone';                   Label='Phone Link';                  Recommended=$false }
     [pscustomobject]@{ Group='Communication'; Match='Microsoft.windowscommunicationsapps';   Label='Mail and Calendar (holds accounts)'; Recommended=$false }
@@ -121,16 +121,16 @@ $catalog = @(
     [pscustomobject]@{ Group='Preinstalled third-party'; Match='Flipboard';                      Label='Flipboard';               Recommended=$true }
     [pscustomobject]@{ Group='Preinstalled third-party'; Match='WinZipUniversal';                Label='WinZip';                  Recommended=$true }
 
-    [pscustomobject]@{ Group='OEM (HP)'; Match='AD2F1837.HPJumpStarts';                      Label='HP JumpStarts';               Recommended=$true }
-    [pscustomobject]@{ Group='OEM (HP)'; Match='AD2F1837.HPWelcome';                         Label='HP Welcome';                  Recommended=$true }
-    [pscustomobject]@{ Group='OEM (HP)'; Match='AD2F1837.myHP';                              Label='myHP';                        Recommended=$true }
-    [pscustomobject]@{ Group='OEM (HP)'; Match='AD2F1837.HPConnectedMusic';                  Label='HP Connected Music';          Recommended=$true }
-    [pscustomobject]@{ Group='OEM (HP)'; Match='AD2F1837.HPConnectedPhotopoweredbySnapfish'; Label='HP Connected Photo';          Recommended=$true }
-    [pscustomobject]@{ Group='OEM (HP)'; Match='AD2F1837.HPRegistration';                    Label='HP Registration';             Recommended=$true }
+    [pscustomobject]@{ Group='OEM (HP)'; Match='AD2F1837.HPJumpStarts';                      Label='HP JumpStarts';               Recommended=$false }
+    [pscustomobject]@{ Group='OEM (HP)'; Match='AD2F1837.HPWelcome';                         Label='HP Welcome';                  Recommended=$false }
+    [pscustomobject]@{ Group='OEM (HP)'; Match='AD2F1837.myHP';                              Label='myHP';                        Recommended=$false }
+    [pscustomobject]@{ Group='OEM (HP)'; Match='AD2F1837.HPConnectedMusic';                  Label='HP Connected Music';          Recommended=$false }
+    [pscustomobject]@{ Group='OEM (HP)'; Match='AD2F1837.HPConnectedPhotopoweredbySnapfish'; Label='HP Connected Photo';          Recommended=$false }
+    [pscustomobject]@{ Group='OEM (HP)'; Match='AD2F1837.HPRegistration';                    Label='HP Registration';             Recommended=$false }
     [pscustomobject]@{ Group='OEM (HP)'; Match='AD2F1837.HPSupportAssistant';               Label='HP Support Assistant (updates drivers)'; Recommended=$false }
 
-    [pscustomobject]@{ Group='OEM (Dell)'; Match='DellInc.DellDigitalDelivery';             Label='Dell Digital Delivery';       Recommended=$true }
-    [pscustomobject]@{ Group='OEM (Dell)'; Match='DellInc.DellMobileConnect';               Label='Dell Mobile Connect';         Recommended=$true }
+    [pscustomobject]@{ Group='OEM (Dell)'; Match='DellInc.DellDigitalDelivery';             Label='Dell Digital Delivery (delivers purchased software)'; Recommended=$false }
+    [pscustomobject]@{ Group='OEM (Dell)'; Match='DellInc.DellMobileConnect';               Label='Dell Mobile Connect';         Recommended=$false }
     [pscustomobject]@{ Group='OEM (Dell)'; Match='DellInc.DellSupportAssistforPCs';         Label='Dell SupportAssist (updates drivers)'; Recommended=$false }
 
     [pscustomobject]@{ Group='OEM (Lenovo)'; Match='E046963F.LenovoCompanion';              Label='Lenovo Vantage (manages firmware/battery)'; Recommended=$false }
@@ -158,7 +158,7 @@ function New-RestorePoint {
         return $false
     }
 
-    $before = (Get-ComputerRestorePoint -ErrorAction SilentlyContinue | Select-Object -Last 1).SequenceNumber
+    $before = (Get-ComputerRestorePoint -ErrorAction SilentlyContinue | Measure-Object -Property SequenceNumber -Maximum).Maximum
 
     $key = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\SystemRestore"
     $prevFreq = $null
@@ -177,7 +177,7 @@ function New-RestorePoint {
         }
     }
 
-    $after = (Get-ComputerRestorePoint -ErrorAction SilentlyContinue | Select-Object -Last 1).SequenceNumber
+    $after = (Get-ComputerRestorePoint -ErrorAction SilentlyContinue | Measure-Object -Property SequenceNumber -Maximum).Maximum
     if ($after -and $after -ne $before) {
         & $Say "Restore point created."
         return $true
@@ -193,7 +193,7 @@ function Remove-Chosen {
         [string[]]$Names,
         [scriptblock]$Say
     )
-    $removed = 0; $failed = 0; $absent = 0
+    $removed = 0; $partial = 0; $failed = 0; $absent = 0
     foreach ($n in $Names) {
         if (-not (Get-AppxPackage -AllUsers -Name $n -ErrorAction SilentlyContinue)) {
             & $Say "$n is not installed, skipping."
@@ -212,16 +212,22 @@ function Remove-Chosen {
                 try { Remove-AppxProvisionedPackage -Online -PackageName $_.PackageName -ErrorAction Stop | Out-Null }
                 catch { & $Say "  could not deprovision: $($_.Exception.Message)" }
             }
-        if (Get-AppxPackage -AllUsers -Name $n -ErrorAction SilentlyContinue) {
+        # Report against the actual end state, not against whether a call threw.
+        $stillInstalled = [bool](Get-AppxPackage -AllUsers -Name $n -ErrorAction SilentlyContinue)
+        $stillProvisioned = [bool](Get-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -eq $n })
+        if ($stillInstalled) {
             & $Say "  still present (may be protected or in use)."
             $failed++
+        } elseif ($stillProvisioned) {
+            & $Say "  removed for current users, but still provisioned; it may return for new accounts."
+            $partial++
         } else {
             & $Say "  removed."
             $removed++
         }
     }
-    & $Say "Finished. Removed $removed, failed $failed, not installed $absent."
-    return [pscustomobject]@{ Removed = $removed; Failed = $failed; Absent = $absent }
+    & $Say "Finished. Removed $removed, partial $partial, failed $failed, not installed $absent."
+    return [pscustomobject]@{ Removed = $removed; Partial = $partial; Failed = $failed; Absent = $absent }
 }
 
 # ---------------------------------------------------------------------------
@@ -452,7 +458,7 @@ $btnApply.Add_Click({
     }
     $btnApply.Enabled = $true
     [Windows.Forms.MessageBox]::Show(
-        "Removed $($result.Removed), failed $($result.Failed). A sign-out or restart helps some changes settle.",
+        "Removed $($result.Removed), partial $($result.Partial), failed $($result.Failed). A sign-out or restart helps some changes settle.",
         "Windows Cleanup") | Out-Null
 })
 

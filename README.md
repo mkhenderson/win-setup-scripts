@@ -33,15 +33,18 @@ tasks, telemetry or power settings.
 ### The three categories
 
 - **Recommended (ticked by default).** Broadly unwanted promo and info apps: the
-  Bing suite, the Office/Get-Office hub, 3D apps, Solitaire, personal Teams,
-  Skype, Cortana, and preinstalled third-party and OEM promo apps (Candy Crush,
-  Spotify, Netflix, TikTok, HP JumpStarts, Dell Digital Delivery and similar).
+  Bing suite, the Office/Get-Office hub, 3D apps, Solitaire, personal Teams
+  (Chat), Skype, Cortana, and preinstalled third-party promo apps (Candy Crush,
+  Spotify, Netflix, TikTok and similar).
 - **Optional (unticked by default).** Things plenty of people use, or that carry
   a consequence, so you opt in per item: Xbox apps, Phone Link, Media Player,
-  Movies & TV, Copilot, and OEM utilities that manage drivers or firmware
-  (Lenovo Vantage, Dell SupportAssist, HP Support Assistant). Also here: apps
-  that hold your own data, since removing them can lose it. Sticky Notes,
-  OneNote, Journal, and Mail & Calendar are in this group for that reason.
+  Movies & TV, Copilot, the new unified Teams app (which may be your work
+  client), Clipchamp, and Power Automate. All OEM apps are optional too, both
+  the promo ones and the utilities that manage drivers or firmware (Lenovo
+  Vantage, Dell SupportAssist, HP Support Assistant, and the HP/Dell promo
+  apps). Also here: apps that hold your own data, since removing them can lose
+  it. Sticky Notes, OneNote, Journal, and Mail & Calendar are in this group for
+  that reason.
 - **Protected (never listed).** The core components above are not in the tool at
   all, so no mode can select them.
 
