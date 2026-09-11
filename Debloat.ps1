@@ -38,12 +38,15 @@ if (-not $me.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
 #
 # Recommended = removed by default. Tiers mirror what the community treats as
 # safe vs risky (Raphire/Win11Debloat and ChrisTitusTech/winutil):
-#   - clearly unused promo and info apps are on by default
-#   - apps that hold your data (Sticky Notes, Mail, OneNote) are off by default
-#   - things people often use (Xbox, Phone Link, Media Player) are off by default
+#   - clearly unused Microsoft and preinstalled third-party promo/info apps are
+#     on by default
+#   - apps that hold your data (Sticky Notes, Mail, OneNote, Journal) are off
+#   - things people often use are off by default (Xbox, Phone Link, Media Player,
+#     Clipchamp, Power Automate, the new unified Teams)
 #   - Get Help and Bing Search are off because removal can error or affect Start
-#     menu search, and OEM utilities (Lenovo Vantage, Dell SupportAssist) can
-#     manage drivers/firmware, so those are off too
+#     menu search
+#   - all OEM apps are off: the driver/firmware utilities (Lenovo Vantage, Dell
+#     SupportAssist) and the OEM promo apps alike
 $catalog = @(
     [pscustomobject]@{ Group='Bing and news'; Match='Microsoft.BingNews';                    Label='Microsoft News';              Recommended=$true }
     [pscustomobject]@{ Group='Bing and news'; Match='Microsoft.News';                        Label='News';                        Recommended=$true }

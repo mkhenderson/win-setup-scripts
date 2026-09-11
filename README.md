@@ -16,7 +16,8 @@ tasks, telemetry or power settings.
 - Removes the ones you pick, for all user accounts, and deprovisions them so
   new accounts created later don't get them back.
 - Can create a System Restore point first.
-- Reports how many were removed, failed, or weren't installed.
+- Reports how many were removed, partially removed (removed for current users
+  but still provisioned), failed, or weren't installed.
 
 ### What it does not do
 
@@ -48,9 +49,9 @@ tasks, telemetry or power settings.
 - **Protected (never listed).** The core components above are not in the tool at
   all, so no mode can select them.
 
-`-Recommended` mode removes only the Recommended set. It will never remove an
-optional or protected item. If you want an optional app gone, tick it yourself
-in the GUI or select it in the console menu.
+`-Recommended` mode selects only the Recommended set; optional and protected
+items are not included. If you want an optional app gone, tick it yourself in the
+GUI or select it in the console menu.
 
 ### Running it
 
@@ -83,6 +84,35 @@ not sure what something is, leave it. Windows 10 and Windows 11 ship different
 apps, and Microsoft renames packages between builds, so the list you see will
 differ from machine to machine. The tool only shows apps that are present and
 skips anything that isn't, rather than failing.
+
+### Testing status
+
+Runtime-tested on Windows 11 Enterprise Evaluation 25H2 (build 26200.6584) in a
+Hyper-V VM. Verified there:
+
+- A single Optional package and the full `-Recommended` set removed exactly the
+  intended packages; current-user, all-users, and provisioned states were
+  independently verified afterward.
+- Optional, protected, and all other installed apps were left unchanged — no
+  unintended additions or removals.
+- The restore-point path worked from a machine with System Protection off: it
+  enabled protection, created a point, confirmed it by sequence number, and
+  removed its temporary creation-frequency setting afterward.
+- The reported "removed" count matched independent verification.
+
+Not yet runtime-tested (these are untested paths, not known problems):
+
+- The `partial`, `failed`, and `absent` result branches (only clean removals
+  occurred).
+- Removal of real OEM and third-party/promo packages (the clean image had none),
+  and most individual catalog entries.
+- The GUI and `-NoGui` interactive flows, and the admin self-elevation prompt.
+- The restore-point failure/abort path.
+- Other Windows editions and builds.
+
+Reversibility during testing came from Hyper-V checkpoints, not from the
+debloater itself. Appx removal is not guaranteed to be undoable (see "About the
+restore point").
 
 ### About the restore point
 
