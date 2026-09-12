@@ -1,14 +1,16 @@
 # win-setup-scripts
 
-Small PowerShell tools I use when setting up a fresh Windows box.
+A few PowerShell tools I keep around for setting up a fresh Windows box, mostly
+so I stop doing the same cleanup by hand every single time.
 
 ## Debloat.ps1
 
-Removes preinstalled Windows, OEM and promotional apps you don't want. It has a
-GUI and a console mode, and only ever removes what you select. It is an app
-remover, not a system optimizer: it does not touch Windows Update, Defender,
-services, the registry (beyond one restore-point setting it reverts), scheduled
-tasks, telemetry or power settings.
+Removes the preinstalled Windows, OEM, and promotional apps you never asked for
+(looking at you, Candy Crush). It has a GUI and a console mode, and it only ever
+removes what you actually tick. It's an app remover, not a system "optimizer": it
+doesn't touch Windows Update, Defender, services, the registry (beyond one
+restore-point setting it puts back), scheduled tasks, telemetry, or power
+settings.
 
 ### What it does
 
@@ -27,9 +29,9 @@ tasks, telemetry or power settings.
   Microsoft Store, Windows Terminal, Calculator, Photos, Snipping Tool, Windows
   Security, Camera, Notepad, Paint, the Xbox identity/framework packages games
   depend on, and the .NET / Visual C++ runtimes.
-- It makes no performance claims. Removing apps frees some disk space and cuts a
-  few background/startup entries. Whether you notice a speed difference depends
-  on the machine, so the tool doesn't promise one.
+- It makes no performance claims. Removing apps frees a bit of disk space and
+  trims a few startup and background entries. Whether the machine actually feels
+  faster is between you and your machine.
 
 ### The three categories
 
@@ -93,7 +95,7 @@ Hyper-V VM. Verified there:
 - A single Optional package and the full `-Recommended` set removed exactly the
   intended packages; current-user, all-users, and provisioned states were
   independently verified afterward.
-- Optional, protected, and all other installed apps were left unchanged — no
+- Optional, protected, and all other installed apps were left unchanged, with no
   unintended additions or removals.
 - The restore-point path worked from a machine with System Protection off: it
   enabled protection, created a point, confirmed it by sequence number, and
