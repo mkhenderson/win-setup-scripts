@@ -99,6 +99,14 @@ Hyper-V VM. Verified there:
   enabled protection, created a point, confirmed it by sequence number, and
   removed its temporary creation-frequency setting afterward.
 - The reported "removed" count matched independent verification.
+- The GUI and the `-NoGui` console flow were both exercised end-to-end: the GUI
+  launched and rendered the grouped catalog with a working selection and
+  Apply/confirm flow, and `-NoGui` rendered the interactive catalog and accepted
+  a numeric selection.
+- Removals through both paths were real current-user and all-users uninstalls
+  plus deprovisioning; reported counts matched independent verification, no
+  unintended protected or unrelated package was removed, and the VM was restored
+  to `Clean-Baseline2` afterward.
 
 Not yet runtime-tested (these are untested paths, not known problems):
 
@@ -106,7 +114,7 @@ Not yet runtime-tested (these are untested paths, not known problems):
   occurred).
 - Removal of real OEM and third-party/promo packages (the clean image had none),
   and most individual catalog entries.
-- The GUI and `-NoGui` interactive flows, and the admin self-elevation prompt.
+- The admin self-elevation relaunch, as an isolated test.
 - The restore-point failure/abort path.
 - Other Windows editions and builds.
 
