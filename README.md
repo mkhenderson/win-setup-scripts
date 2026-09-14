@@ -1,64 +1,63 @@
 # win-setup-scripts
 
-A few PowerShell tools I keep around for setting up a fresh Windows box, mostly
-so I stop doing the same cleanup by hand every single time.
+A couple of PowerShell scripts I use when setting up a fresh Windows install,
+mostly so I'm not clicking through the same cleanup by hand every time.
 
 ## Debloat.ps1
 
-Removes the preinstalled Windows, OEM, and promotional apps you never asked for
-(looking at you, Candy Crush). It has a GUI and a console mode, and it only ever
-removes what you actually tick. It's an app remover, not a system "optimizer": it
-doesn't touch Windows Update, Defender, services, the registry (beyond one
-restore-point setting it puts back), scheduled tasks, telemetry, or power
-settings.
+Gets rid of the preinstalled Windows, OEM, and promo apps nobody asked for
+(looking at you, Candy Crush). There's a GUI and a console version, and it only
+ever removes what you actually pick. It's an app remover, not one of those
+"optimizer" tools: it doesn't touch Windows Update, Defender, services, the
+registry (other than one restore-point setting it puts back), scheduled tasks,
+telemetry, or power settings.
 
 ### What it does
 
-- Lists the removable apps that are actually installed on this machine.
-- Removes the ones you pick, for all user accounts, and deprovisions them so
-  new accounts created later don't get them back.
-- Can create a System Restore point first.
-- Reports how many were removed, partially removed (removed for current users
-  but still provisioned), failed, or weren't installed.
+- Shows the removable apps that are actually installed on your machine.
+- Removes the ones you pick, for every user account, and deprovisions them so new
+  accounts don't get them back later.
+- Can make a System Restore point first.
+- Tells you how many got removed, partially removed (gone for users but still
+  provisioned), failed, or weren't there to begin with.
 
-### What it does not do
+### What it doesn't do
 
-- It does not touch your files: documents, pictures, downloads, OneDrive
-  contents, browser data or saved games are not deleted.
-- It never lists core components, so they can't be removed by accident: the
-  Microsoft Store, Windows Terminal, Calculator, Photos, Snipping Tool, Windows
-  Security, Camera, Notepad, Paint, the Xbox identity/framework packages games
-  depend on, and the .NET / Visual C++ runtimes.
-- It makes no performance claims. Removing apps frees a bit of disk space and
-  trims a few startup and background entries. Whether the machine actually feels
-  faster is between you and your machine.
+- It leaves your files alone: documents, pictures, downloads, OneDrive, browser
+  data, saved games, none of that gets deleted.
+- It never even lists the core stuff, so you can't nuke it by accident: the
+  Store, Windows Terminal, Calculator, Photos, Snipping Tool, Windows Security,
+  Camera, Notepad, Paint, the Xbox identity/framework bits games need, and the
+  .NET / Visual C++ runtimes.
+- It doesn't promise to make your PC faster. You get back some disk space and a
+  few less startup/background things running. Whether it actually feels snappier
+  is between you and your PC.
 
 ### The three categories
 
-- **Recommended (ticked by default).** Broadly unwanted promo and info apps: the
-  Bing suite, the Office/Get-Office hub, 3D apps, Solitaire, personal Teams
-  (Chat), Skype, Cortana, and preinstalled third-party promo apps (Candy Crush,
-  Spotify, Netflix, TikTok and similar).
-- **Optional (unticked by default).** Things plenty of people use, or that carry
-  a consequence, so you opt in per item: Xbox apps, Phone Link, Media Player,
-  Movies & TV, Copilot, the new unified Teams app (which may be your work
-  client), Clipchamp, and Power Automate. All OEM apps are optional too, both
-  the promo ones and the utilities that manage drivers or firmware (Lenovo
-  Vantage, Dell SupportAssist, HP Support Assistant, and the HP/Dell promo
-  apps). Also here: apps that hold your own data, since removing them can lose
-  it. Sticky Notes, OneNote, Journal, and Mail & Calendar are in this group for
-  that reason.
-- **Protected (never listed).** The core components above are not in the tool at
-  all, so no mode can select them.
+- **Recommended (ticked by default).** The stuff most people don't want: the Bing
+  suite, the Office/Get-Office hub, 3D apps, Solitaire, personal Teams (Chat),
+  Skype, Cortana, and preinstalled promo junk (Candy Crush, Spotify, Netflix,
+  TikTok, that kind of thing).
+- **Optional (unticked by default).** Stuff plenty of people actually use, or that
+  could bite you, so you opt in yourself: Xbox apps, Phone Link, Media Player,
+  Movies & TV, Copilot, the new unified Teams (might be your work one), Clipchamp,
+  and Power Automate. All the OEM apps live here too, both the junk and the
+  driver/firmware ones (Lenovo Vantage, Dell SupportAssist, HP Support Assistant,
+  and the HP/Dell promo apps). Anything that holds your own data is here as well,
+  since removing it can lose it: Sticky Notes, OneNote, Journal, and Mail &
+  Calendar.
+- **Protected (never listed).** The core stuff above isn't in the tool at all, so
+  no mode can pick it.
 
-`-Recommended` mode selects only the Recommended set; optional and protected
-items are not included. If you want an optional app gone, tick it yourself in the
-GUI or select it in the console menu.
+`-Recommended` mode only touches the Recommended set. Optional and protected stuff
+isn't included. If you want an optional app gone, tick it yourself in the GUI or
+pick it in the console menu.
 
 ### Running it
 
-**GUI (default).** Right-click `Debloat.ps1` and choose **Run with PowerShell**,
-or from a terminal:
+**GUI (default).** Right-click `Debloat.ps1` and hit **Run with PowerShell**, or
+from a terminal:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\Debloat.ps1
@@ -70,71 +69,69 @@ powershell -ExecutionPolicy Bypass -File .\Debloat.ps1
 powershell -ExecutionPolicy Bypass -File .\Debloat.ps1 -NoGui
 ```
 
-**No prompts.** Removes the recommended set and exits, handy for a setup run:
+**No prompts.** Removes the recommended set and exits, handy for a fresh setup:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\Debloat.ps1 -Recommended
 ```
 
-Add `-SkipRestorePoint` to skip the restore point. The script needs admin rights
-and will prompt for them. A sign-out or restart helps some changes settle.
+Add `-SkipRestorePoint` to skip the restore point. It needs admin and will ask
+for it. A sign-out or restart helps some of the changes settle.
 
-### Review before you remove
+### Have a look before you remove
 
-Read the list before applying. Optional items are unticked on purpose. If you're
-not sure what something is, leave it. Windows 10 and Windows 11 ship different
-apps, and Microsoft renames packages between builds, so the list you see will
-differ from machine to machine. The tool only shows apps that are present and
-skips anything that isn't, rather than failing.
+Read the list before you apply it. The optional stuff is unticked for a reason.
+If you're not sure what something is, just leave it. Windows 10 and 11 ship
+different apps and Microsoft renames packages between builds, so what you see will
+be different machine to machine. The tool only shows what's actually installed and
+skips the rest instead of erroring out.
 
 ### Testing status
 
 Runtime-tested on Windows 11 Enterprise Evaluation 25H2 (build 26200.6584) in a
-Hyper-V VM. Verified there:
+Hyper-V VM. What I confirmed there:
 
-- A single Optional package and the full `-Recommended` set removed exactly the
-  intended packages; current-user, all-users, and provisioned states were
-  independently verified afterward.
-- Optional, protected, and all other installed apps were left unchanged, with no
-  unintended additions or removals.
+- Removing a single optional app and the full `-Recommended` set took out exactly
+  what they should; I checked current-user, all-users, and provisioned state after
+  each.
+- Optional, protected, and everything else installed was left alone, nothing extra
+  added or removed.
 - The restore-point path worked from a machine with System Protection off: it
-  enabled protection, created a point, confirmed it by sequence number, and
-  removed its temporary creation-frequency setting afterward.
-- The reported "removed" count matched independent verification.
-- The GUI and the `-NoGui` console flow were both exercised end-to-end: the GUI
-  launched and rendered the grouped catalog with a working selection and
-  Apply/confirm flow, and `-NoGui` rendered the interactive catalog and accepted
-  a numeric selection.
-- Removals through both paths were real current-user and all-users uninstalls
-  plus deprovisioning; reported counts matched independent verification, no
-  unintended protected or unrelated package was removed, and the VM was restored
-  to `Clean-Baseline2` afterward.
+  turned protection on, made a point, confirmed it by sequence number, and put its
+  temporary setting back after.
+- The reported "removed" count matched what I actually saw.
+- Both the GUI and the console (`-NoGui`) got run end to end: the GUI opened and
+  loaded the list with a working select and Apply/confirm, and `-NoGui` showed the
+  menu and took a numbered pick.
+- Removals in both were real per-user and all-users uninstalls plus deprovisioning,
+  the counts matched independent checks, nothing protected or unrelated got
+  removed, and the VM went back to its clean checkpoint after.
 
-Not yet runtime-tested (these are untested paths, not known problems):
+Not tested yet (just untested, not known problems):
 
-- The `partial`, `failed`, and `absent` result branches (only clean removals
-  occurred).
-- Removal of real OEM and third-party/promo packages (the clean image had none),
-  and most individual catalog entries.
-- The admin self-elevation relaunch, as an isolated test.
+- The `partial`, `failed`, and `absent` result cases (only clean removals
+  happened).
+- Removing real OEM and third-party/promo apps (the clean image didn't have any),
+  and most of the individual catalog entries.
+- The admin self-elevation prompt on its own.
 - The restore-point failure/abort path.
 - Other Windows editions and builds.
 
-Reversibility during testing came from Hyper-V checkpoints, not from the
-debloater itself. Appx removal is not guaranteed to be undoable (see "About the
-restore point").
+Reversibility during testing came from the Hyper-V checkpoint, not the tool itself.
+Removing an Appx package isn't guaranteed to be undoable (see the restore point
+note below).
 
 ### About the restore point
 
-If you ask for a restore point, the script creates one and confirms it was
-actually written before removing anything. (Windows normally skips a restore
-point if one was made in the last 24 hours; the script lifts that limit for its
-own call and puts the setting back.) In unattended `-Recommended` mode, if the
-restore point can't be created it stops instead of removing apps without a
-safety net. In the GUI and console it warns you and asks whether to continue.
+If you ask for a restore point, the script makes one and checks it actually got
+written before removing anything. (Windows normally skips a restore point if it
+made one in the last 24 hours, so the script lifts that limit for its own call and
+puts the setting back after.) In unattended `-Recommended` mode, if it can't make
+the restore point it stops instead of removing stuff with no safety net. In the
+GUI and console it warns you and asks if you want to keep going.
 
-A restore point is a recovery option, not a guarantee. Removing a Store app is
-not always cleanly reversible. Some apps can be reinstalled from the Microsoft
-Store afterwards, some are gone until the next feature update reprovisions them,
-and a restore point rolls back system state but is not proof that every removal
-can be perfectly undone. If an app matters to you, don't remove it.
+A restore point is a safety net, not a guarantee. Removing a Store app isn't always
+cleanly undoable. Some apps you can reinstall from the Store after, some stay gone
+until the next big Windows update puts them back, and a restore point rolls back
+system state but isn't proof every removal can be perfectly undone. If an app
+matters to you, don't remove it.
