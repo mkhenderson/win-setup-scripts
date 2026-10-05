@@ -1,4 +1,6 @@
 # win-setup-scripts
+Note: AI wrote most of the implementation for this script. I directed the project, wrote some of the code myself, did all the testing in Windows 11 VMs, worked through the problems that came up, and wrote the docs. If you spot a bug or issue, let me know!
+
 
 A couple of PowerShell scripts I use when setting up a fresh Windows install,
 mostly so I'm not clicking through the same cleanup by hand every time.
