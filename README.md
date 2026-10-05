@@ -14,6 +14,8 @@ ever removes what you actually pick. It's an app remover, not one of those
 registry (other than one restore-point setting it puts back), scheduled tasks,
 telemetry, or power settings.
 
+![The Windows Cleanup GUI](screenshots/gui.png)
+
 ### What it does
 
 - Shows the removable apps that are actually installed on your machine.
